@@ -30,7 +30,13 @@ uint rng_next(uint rng) {
 	return rng * 0x5D588B65 + 0x269EC3;
 }
 
-void rng_iterate(uint rng, solution solutions, bool* ret, std::vector<int> vec) {
+const char piecemap[7] = {
+	'S', 'Z', 'J', 'L', 'T', 'O', 'I'
+};
+
+std::mutex sol_found_lock;
+
+void rng_iterate(uint rng, solution solutions, bool* ret, std::vector<int> vec, uint init, int prev) {
 	int bag[7];
 	for (int i = 0; i < 7; i++) {
 		bag[i] = i;
@@ -47,24 +53,61 @@ void rng_iterate(uint rng, solution solutions, bool* ret, std::vector<int> vec) 
 		bag[newIndex] = oldValue;
 	}
 
+	int bag_i = bag_encode(bag);
+
 	for (int i = 0; i < solutions.size(); i++) {
 		int sol = std::get<1>(solutions[i]);
-		int bag_i = bag_encode(bag);
 		int hold = std::get<0>(solutions[i]) + 1;
 
 		if (sol == SOLUTION_SUCCESS) {
-			printf("  > Found solution ");
+			std::lock_guard<std::mutex> lock(sol_found_lock);
+
+			printf("/* --------------------------------------------------- */\nRNG %u (0x%08x):\nSolution path:", init, init);
 			for (int j = 0; j < vec.size(); j++) {
-				printf("%d ", vec[j]);
+				printf(" %d", vec[j]);
+			}
+
+			int previous[7];
+			bag_decode(prev, previous);
+
+			if (previous[0] != 6) {
+				int temp = previous[0];
+				previous[0] = previous[1];
+				previous[1] = temp;
+			}
+
+			printf("\n16 Lines left, board is empty.\nPieces left:\n %c%c%c%c%c%c\n", piecemap[previous[1]], piecemap[previous[2]], piecemap[previous[3]], piecemap[previous[4]], piecemap[previous[5]], piecemap[previous[6]]);
+			
+			for (int j = 0; j < 7; j++) {
+				for (int k = 0; k < 7; k++) {
+					printf("%c", piecemap[bag[k]]);
+				}
+				printf("\n");
+
+				for (int k = 0; k < 7; k++) {
+					bag[k] = k;
+				}
+
+				for (int k = 0; k < 7; k++) {
+					rng = rng_next(rng);
+
+					int newIndex = ((((rng) >> 16) * (7 - k)) >> 16) + k;
+
+					int newValue = bag[newIndex];
+					int oldValue = bag[k];
+					bag[k] = newValue;
+					bag[newIndex] = oldValue;
+				}
 			}
 			printf("\n");
+
 			*ret = true;
 		}
 
 		if (solution_cache[sol][bag_i][hold].size()) {
 			std::vector<int> copy = vec;
 			copy.push_back(sol);
-			rng_iterate(rng, solution_cache[sol][bag_i][hold], ret, copy);
+			rng_iterate(rng, solution_cache[sol][bag_i][hold], ret, copy, init, bag_i);
 		}
 	}
 }
@@ -77,10 +120,9 @@ void rng_search(uint i) {
 		bool ret = false;
 		rng_progress = i;
 		std::vector<int> empty;
-		rng_iterate(i, solution_start, &ret, empty);
+		rng_iterate(i, solution_start, &ret, empty, i, 0);
 
 		if (ret) {
-			printf("  > for valid RNG value %u!\n", i);
 			sol++;
 		}
 	} while ((i += THREADS) - THREADS < RNG_MAX - THREADS + 1);
