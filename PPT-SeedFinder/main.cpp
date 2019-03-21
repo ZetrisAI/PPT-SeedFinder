@@ -1,6 +1,8 @@
 #include "main.h"
 
-char bin[BIN_MAX];
+solution* bin;
+
+std::vector<rng_solution> solutions;
 
 int perm_encode(int n, int* perm) {
 	int encoded = 0;
@@ -17,7 +19,7 @@ int perm_encode(int n, int* perm) {
 	return encoded;
 }
 
-int set_encode(int* set, int index, int hold) {
+uint set_encode(int* set, int index, int hold) {
 	int size[4] = {}, encoded[4];
 
 	int i = 0;
@@ -87,7 +89,7 @@ void rng_generate(uint rng, int* set) {
 	}
 }
 
-void set_iterate(int* set, int index, int hold, bool* output) {
+void set_iterate(int* set, int index, int hold, uint rng, pc_solution cost) {
 	int pc = index % 7;
 	int s = index * 10;
 
@@ -96,72 +98,73 @@ void set_iterate(int* set, int index, int hold, bool* output) {
 		s += 1;
 	}
 
-	char result = bin[BIN_OFFSETS[pc] + set_encode(&set[s], index, hold)];
+	ulong offset = (ulong)bin + (BIN_OFFSETS[pc] + set_encode(&set[s], index, hold)) * BIN_ELEMENT;
 
-	if (result != -2) {
-		if (index == 9) {
-			*output = true;
-			if (hold == -1) printf("no hold!!!!11");
+	for (int i = 0; i < 8; i++) {
+		solution result = *((solution*)(offset + i * 2));
 
-		} else if (result == -1) {
-			set_iterate(set, index + 1, -1, output);
+		if (result.solution_exists) {
+			printf("path %d: %d\n", index, hold);
 
-		} else {
-			for (int i = 0; i < 7; i++) {
-				if ((result >> (6 - i)) & 1) set_iterate(set, index + 1, i, output);
+			pc_solution new_cost = cost;
+			new_cost.moves += result.moves;
+			new_cost.rotates += result.rotates;
+			new_cost.holds += result.holds;
+
+			if (index == 9) {
+				printf("  > Found 0x%08x! %d\n", rng, new_cost.holds);
+
+				rng_solution solved;
+				solved.rng = rng;
+				solved.moves = new_cost.moves;
+				solved.rotates = new_cost.rotates;
+				solved.holds = new_cost.holds;
+				solutions.push_back(solved);
+
+			} else {
+				set_iterate(set, index + 1, i - 1, rng, new_cost);
 			}
 		}
 	}
 }
 
-uint sol = 0;
-
 void rng_search(uint i) {
 	printf("  > Thread %d started\n", std::this_thread::get_id());
+
 	do {
 		rng_progress = i;
 		
 		int set[105];
 		rng_generate(i, set);
 
-		bool result = false;
-		set_iterate(set, 0, -1, &result);
+		pc_solution cost;
 
-		if (result) {
-			printf("  > Found %u!\n   > ", i);
+		set_iterate(set, 0, -1, i, cost);
 
-			for (int j = 0; j < 101; j++) {
-				printf("%d ", set[j]);
-			}
-
-			printf("\n");
-
-			sol++;
-		}
 	} while ((i += THREADS) - THREADS < RNG_MAX - THREADS + 1);
 }
 
 void rng_check_progress() {
 	while (true) {
 		getchar();
-		printf("\n   > Current RNG: %u\n   > Found RNGs: %u\n\n", rng_progress, sol);
+		printf("\n   > Current RNG: 0x%08x\n   > Found RNGs: %u\n\n", rng_progress, solutions.size());
 	}
 }
 
 int main() {
-	printf("\n Puyo Puyo Tetris Sprint 10PC RNG Seed Finder\n by mat1jaczyyy with help from knewjade and ChiCubed\n\n");
-	
-	printf(" > Loading binary PC knowledge base...\n");
+	printf("\n Puyo Puyo Tetris Sprint - 10 Tetris PC RNG Seed Finder\n by mat1jaczyyy with help from knewjade and ChiCubed\n\n > Loading binary PC knowledge base...\n");
 
-	FILE *handle = fopen("D:\\all.bin", "rb");
-	fread(bin, BIN_MAX, 1, handle);
+	bin = (solution*)malloc(BIN_MAX * 8 * sizeof(solution));
+
+	FILE *handle = fopen("D:\\all_mov.bin", "rb");
+	ulong read = fread(bin, BIN_MAX * BIN_ELEMENT, 1, handle);
 	fclose(handle);
 
 	printf("  > Done\n\n > Starting RNG search...\n");
 
 	std::thread threads[THREADS];
 	for (int i = 0; i < THREADS; i++) {
-		threads[i] = std::thread(rng_search, i);
+		threads[i] = std::thread(rng_search, 0x0cc39230); /*i*/
 	}
 	std::thread progress(rng_check_progress);
 
@@ -169,7 +172,20 @@ int main() {
 		if (threads[i].joinable()) threads[i].join();
 	}
 
-	printf("  > Done\n\n > Found a total of %u RNG values\n\n", sol);
+	printf("  > Done\n\n > Found a total of %u RNG values\n\n > Sorting results...\n", solutions.size());
+
+	std::sort(solutions.begin(), solutions.end());
+
+	for (int i = 0; i < solutions.size(); i++) {
+		int set[105];
+		rng_generate(solutions[i].rng, set);
+		
+		printf("  > 0x%08x (M%d, R%d, H%d) - ", solutions[i].rng, solutions[i].moves, solutions[i].rotates, solutions[i].holds);
+		for (int j = 0; j < 101; j++) {
+			printf("%d ", set[j]);
+		}
+		printf("\n");
+	}
 
 	exit(0);
 }

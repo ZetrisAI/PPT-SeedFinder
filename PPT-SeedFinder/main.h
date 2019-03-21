@@ -3,15 +3,54 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-#include <mutex>
+#include <algorithm>
 #include <thread>
 #include <vector>
 
 typedef unsigned int uint;
+typedef unsigned long long ulong;
 
-#define BIN_MAX 0x0BBBE1C0
+typedef struct {
+	unsigned char moves : 7;
+	bool solution_exists : 1;
+	unsigned char holds : 4;
+	unsigned char rotates : 4;
+} solution;
 
-const int BIN_OFFSETS[15] = {
+typedef struct {
+	uint moves = 0;
+	uint rotates = 0;
+	uint holds = 0;
+} pc_solution;
+
+typedef struct {
+	uint rng;
+	uint moves;
+	uint rotates;
+	uint holds;
+} rng_solution;
+
+bool operator <(const rng_solution& x, const rng_solution& y) {
+	uint xsum = x.moves + x.rotates + x.holds;
+	uint ysum = y.moves + y.rotates + y.holds;
+
+	if (xsum == ysum) {
+		if (x.moves == y.moves) {
+			if (x.holds == y.holds) {
+				return x.rotates < y.rotates;
+			}
+			return x.holds < y.holds;
+		}
+		return x.moves < y.moves;
+	}
+
+	return xsum < ysum;
+}
+
+#define BIN_MAX 0x0BBBE1C0u
+#define BIN_ELEMENT 8 * sizeof(solution)
+
+const uint BIN_OFFSETS[15] = {
 	0x00000000,
 	0x00409980,
 	0x00813300,
@@ -33,8 +72,8 @@ const int BIN_OFFSETS[15] = {
 
 const int FACT[8] = {1, 1, 2, 6, 24, 120, 720, 5040};
 
-#define THREADS 3
+#define THREADS 1//3
 
-#define RNG_MAX 0xFFFFFFFFu
+#define RNG_MAX 0x0cc39232//0xFFFFFFFFu
 
 #endif
