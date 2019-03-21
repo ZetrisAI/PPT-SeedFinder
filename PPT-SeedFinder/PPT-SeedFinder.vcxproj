@@ -19,70 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="solutions\bag9\bag9.cpp" />
-    <ClCompile Include="solutions\bag9\pc6.cpp" />
-    <ClCompile Include="solutions\bag8\pc5_o.cpp" />
-    <ClCompile Include="solutions\bag8\pc5.cpp" />
-    <ClCompile Include="solutions\bag6\bag6.cpp" />
-    <ClCompile Include="solutions\bag7\regrace.cpp" />
-    <ClCompile Include="solutions\bag6\pc4.cpp" />
-    <ClCompile Include="solutions\bag6\pc4_i.cpp" />
-    <ClCompile Include="solutions\bag5\pc3.cpp" />
-    <ClCompile Include="solutions\bag4\double.cpp" />
-    <ClCompile Include="solutions\bag2\bag2.cpp" />
-    <ClCompile Include="solutions\bag2\pc1.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="solutions\bag1\grace.cpp" />
-    <ClCompile Include="solutions\bag1\flat.cpp" />
-    <ClCompile Include="solutions\bag1\pco.cpp" />
-    <ClCompile Include="solutions\bag2\pc1_i.cpp" />
-    <ClCompile Include="solutions\bag2\pc1_zs.cpp" />
-    <ClCompile Include="solutions\bag3\bag3.cpp" />
-    <ClCompile Include="solutions\bag3\pc2_sj.cpp" />
-    <ClCompile Include="solutions\bag3\pc2_sl.cpp" />
-    <ClCompile Include="solutions\bag3\pc2_fj.cpp" />
-    <ClCompile Include="solutions\bag3\pc2_fl.cpp" />
-    <ClCompile Include="solutions\bag5\pc3_i.cpp" />
-    <ClCompile Include="solutions\bag9\pc6_block.cpp" />
-    <ClCompile Include="solutions\bag9\pc6_snake.cpp" />
-    <ClCompile Include="solutions\solutions.cpp" />
-    <ClCompile Include="solutions\traverse.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="solutions\bag9\bag9.h" />
-    <ClInclude Include="solutions\bag9\pc6.h" />
-    <ClInclude Include="solutions\bag8\pc5_o.h" />
-    <ClInclude Include="solutions\bag8\bag8.h" />
-    <ClInclude Include="solutions\bag8\pc5.h" />
-    <ClInclude Include="solutions\bag7\bag7.h" />
-    <ClInclude Include="solutions\bag7\regrace.h" />
-    <ClInclude Include="solutions\bag6\bag6.h" />
-    <ClInclude Include="solutions\bag6\pc4.h" />
-    <ClInclude Include="solutions\bag6\pc4_i.h" />
-    <ClInclude Include="solutions\bag5\bag5.h" />
-    <ClInclude Include="solutions\bag5\pc3.h" />
-    <ClInclude Include="solutions\bag4\bag4.h" />
-    <ClInclude Include="solutions\bag4\double.h" />
-    <ClInclude Include="solutions\bag2\bag2.h" />
-    <ClInclude Include="solutions\bag2\pc1.h" />
     <ClInclude Include="main.h" />
-    <ClInclude Include="solutions\bag1\bag1.h" />
-    <ClInclude Include="solutions\bag1\grace.h" />
-    <ClInclude Include="solutions\bag1\flat.h" />
-    <ClInclude Include="solutions\bag1\pco.h" />
-    <ClInclude Include="solutions\bag2\pc1_i.h" />
-    <ClInclude Include="solutions\bag2\pc1_zs.h" />
-    <ClInclude Include="solutions\bag3\bag3.h" />
-    <ClInclude Include="solutions\bag3\pc2_sj.h" />
-    <ClInclude Include="solutions\bag3\pc2_sl.h" />
-    <ClInclude Include="solutions\bag3\pc2_fj.h" />
-    <ClInclude Include="solutions\bag3\pc2_fl.h" />
-    <ClInclude Include="solutions\bag5\pc3_i.h" />
-    <ClInclude Include="solutions\bag9\pc6_block.h" />
-    <ClInclude Include="solutions\bag9\pc6_snake.h" />
-    <ClInclude Include="solutions\traverse.h" />
-    <ClInclude Include="typedef.h" />
-    <ClInclude Include="solutions\solutions.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
