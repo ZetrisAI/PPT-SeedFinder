@@ -19,7 +19,7 @@ int perm_encode(int n, int* perm) {
 	return encoded;
 }
 
-uint set_encode(int* set, int index, int hold) {
+int set_encode(int* set, int index, int hold) {
 	int size[4] = {}, encoded[4];
 
 	int i = 0;
@@ -107,9 +107,9 @@ void set_iterate(int* set, int index, int hold, uint rng, pc_solution cost) {
 			printf("path %d: %d\n", index, hold);
 
 			pc_solution new_cost = cost;
-			new_cost.moves += result.moves;
-			new_cost.rotates += result.rotates;
-			new_cost.holds += result.holds;
+			//new_cost.moves += result.moves;
+			//new_cost.rotates += result.rotates;
+			//new_cost.holds += result.holds;
 
 			if (index == 9) {
 				printf("  > Found 0x%08x! %d\n", rng, new_cost.holds);
@@ -146,8 +146,8 @@ void rng_search(uint i) {
 
 void rng_check_progress() {
 	while (true) {
-		getchar();
-		printf("\n   > Current RNG: 0x%08x\n   > Found RNGs: %u\n\n", rng_progress, solutions.size());
+		(void)getchar();
+		printf("\n   > Current RNG: 0x%08x\n   > Found RNGs: %llu\n\n", rng_progress, solutions.size());
 	}
 }
 
@@ -172,7 +172,7 @@ int main() {
 		if (threads[i].joinable()) threads[i].join();
 	}
 
-	printf("  > Done\n\n > Found a total of %u RNG values\n\n > Sorting results...\n", solutions.size());
+	printf("  > Done\n\n > Found a total of %llu RNG values\n\n > Sorting results...\n", solutions.size());
 
 	std::sort(solutions.begin(), solutions.end());
 
