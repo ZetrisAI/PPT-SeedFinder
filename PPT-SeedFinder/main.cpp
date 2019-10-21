@@ -154,7 +154,16 @@ void rng_check_progress() {
 int main() {
 	printf("\n Puyo Puyo Tetris Sprint - 10 Tetris PC RNG Seed Finder\n by mat1jaczyyy with help from knewjade and ChiCubed\n\n > Loading binary PC knowledge base...\n");
 
-	bin = (solution*)malloc(BIN_MAX * 8 * sizeof(solution));
+	ulong alloc_size = BIN_MAX * 8 * sizeof(solution);
+
+	printf("  > Allocating %llu bytes (%.2fGB) of memory...\n", alloc_size, (double)alloc_size / (1024 * 1024 * 1024));
+
+	bin = (solution*)malloc(alloc_size);
+
+	if (bin == NULL) {
+		printf("  > Failed to allocate memory!\n");
+		exit(1);
+	}
 
 	FILE *handle = fopen("D:\\all_mov.bin", "rb");
 	ulong read = fread(bin, BIN_MAX * BIN_ELEMENT, 1, handle);
