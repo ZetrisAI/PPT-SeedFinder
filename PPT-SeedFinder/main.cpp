@@ -165,8 +165,6 @@ int main() {
 		exit(1);
 	}
 
-	FILE *handle = fopen("D:\\all_mov.bin", "rb");
-	ulong read = fread(bin, BIN_MAX * BIN_ELEMENT, 1, handle);
 	FILE *handle = fopen("E:\\all_mov.bin", "rb");
 	(void)fread(bin, BIN_MAX * BIN_ELEMENT, 1, handle);
 	fclose(handle);
