@@ -101,7 +101,7 @@ void set_iterate(int* set, int index, int hold, uint rng, pc_solution cost) {
 	ulong offset = (ulong)bin + (BIN_OFFSETS[pc] + set_encode(&set[s], index, hold)) * BIN_ELEMENT;
 
 	for (int i = 0; i < 8; i++) {
-		solution result = *((solution*)(offset + i * 2));
+		solution result = *((solution*)(offset + i * sizeof(solution)));
 
 		if (result.solution_exists) {
 			printf("path %d: %d\n", index, hold);
