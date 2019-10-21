@@ -72,8 +72,8 @@ const uint BIN_OFFSETS[15] = {
 
 const int FACT[8] = {1, 1, 2, 6, 24, 120, 720, 5040};
 
-#define THREADS 1//3
+#define THREADS 3
 
-#define RNG_MAX 0x0cc39232//0xFFFFFFFFu
+#define RNG_MAX 0xFFFFFFFFu
 
 #endif
