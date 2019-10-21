@@ -175,7 +175,7 @@ int main() {
 
 	std::thread threads[THREADS];
 	for (int i = 0; i < THREADS; i++) {
-		threads[i] = std::thread(rng_search, 0x0cc39230); /*i*/
+		threads[i] = std::thread(rng_search, i);
 	}
 	std::thread progress(rng_check_progress);
 
