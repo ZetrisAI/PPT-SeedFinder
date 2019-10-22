@@ -52,10 +52,10 @@ bool operator <(const rng_solution& x, const rng_solution& y) {
 
 const int FACT[8] = {1, 1, 2, 6, 24, 120, 720, 5040};
 
-#define THREADS 1
+#define THREADS 10
 
 #define MOV_FILENAME "C:\\all_mov.bin"
 #define PPT_IS_MODERN true // set to false if using legacy PPT
-#define RNG_MAX 0x0cd00000u
+#define RNG_MAX 0xFFFFFFFFu
 
 #endif
