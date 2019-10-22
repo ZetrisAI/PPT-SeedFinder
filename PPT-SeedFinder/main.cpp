@@ -106,7 +106,7 @@ uint frames_calculate(char* pieces) {
 			cost += m * 2;
 
 		} else {
-			cost += r * 2 - PPT_IS_MODERN; // can hard drop and rotate on the same frame
+			cost += r * 2 - 1;
 		}
 	}
 
