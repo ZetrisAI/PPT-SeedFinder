@@ -89,7 +89,31 @@ void rng_generate(uint rng, int* set) {
 	}
 }
 
-void set_iterate(int* set, int index, int hold, uint rng, pc_solution cost) {
+uint frames_calculate(char* pieces) { 
+	uint cost = 0;
+
+	for (int i = 0; i < 10; i++) {
+		uint r = pieces[i] >> 1 && 8;
+		uint m = pieces[i] >> 4 && 16;
+
+		cost += pieces[i] & 1;
+
+		// note: we count the frame we hard drop on
+		if (m == 0 && r == 0) {
+			cost += 1;
+
+		} else if (m >= r) {
+			cost += m * 2;
+
+		} else {
+			cost += r * 2 - PPT_IS_MODERN; // can hard drop and rotate on the same frame
+		}
+	}
+
+	return cost;
+}
+
+void set_iterate(int* set, int index, int hold, uint rng, uint cost) {
 	int pc = index % 7;
 	int s = index * 10;
 
@@ -98,27 +122,34 @@ void set_iterate(int* set, int index, int hold, uint rng, pc_solution cost) {
 		s += 1;
 	}
 
-	ulong offset = (ulong)bin + (BIN_OFFSETS[pc] + set_encode(&set[s], index, hold)) * BIN_ELEMENT;
+	ulong offset = (ulong)bin + (BIN_OFFSETS[pc] + (ulong)set_encode(&set[s], index, hold)) * BIN_ELEMENT;
+	if (rng == 0x0cc39230u) {
+		printf("i hit the thing\n");
+		for (int i = 0; i < BIN_ELEMENT; i++) {
+			printf("%02x ", *((char*)(offset + i)));
+		}
+		printf("\n");
+	}
 
 	for (int i = 0; i < 8; i++) {
 		solution result = *((solution*)(offset + i * sizeof(solution)));
+		if (rng == 0x0cc39230u) {
+			printf("%02x ", (char)result.solution_exists);
+			for (int j = 0; j < 10; j++) {
+				printf("%02x ", (char)result.piece_infos[j]);
+			}
+			printf("\n");
+		}
 
 		if (result.solution_exists) {
-			printf("path %d: %d\n", index, hold);
-
-			pc_solution new_cost = cost;
-			//new_cost.moves += result.moves;
-			//new_cost.rotates += result.rotates;
-			//new_cost.holds += result.holds;
+			uint new_cost = cost + frames_calculate(result.piece_infos);
 
 			if (index == 9) {
-				printf("  > Found 0x%08x! %d\n", rng, new_cost.holds);
+				printf("  > Found 0x%08x! %d\n", rng, new_cost);
 
 				rng_solution solved;
 				solved.rng = rng;
-				solved.moves = new_cost.moves;
-				solved.rotates = new_cost.rotates;
-				solved.holds = new_cost.holds;
+				solved.frames = new_cost;
 				solutions.push_back(solved);
 
 			} else {
@@ -137,7 +168,7 @@ void rng_search(uint i) {
 		int set[105];
 		rng_generate(i, set);
 
-		pc_solution cost;
+		uint cost = 0;
 
 		set_iterate(set, 0, -1, i, cost);
 
@@ -165,7 +196,7 @@ int main() {
 		exit(1);
 	}
 
-	FILE *handle = fopen("E:\\all_mov.bin", "rb");
+	FILE* handle = fopen(MOV_FILENAME, "rb");
 	(void)fread(bin, BIN_MAX * BIN_ELEMENT, 1, handle);
 	fclose(handle);
 
@@ -173,7 +204,7 @@ int main() {
 
 	std::thread threads[THREADS];
 	for (int i = 0; i < THREADS; i++) {
-		threads[i] = std::thread(rng_search, i);
+		threads[i] = std::thread(rng_search, 0x0cc00000);
 	}
 	std::thread progress(rng_check_progress);
 
@@ -189,7 +220,7 @@ int main() {
 		int set[105];
 		rng_generate(solutions[i].rng, set);
 		
-		printf("  > 0x%08x (M%d, R%d, H%d) - ", solutions[i].rng, solutions[i].moves, solutions[i].rotates, solutions[i].holds);
+		printf("  > 0x%08x (cost: %u) - ", solutions[i].rng, solutions[i].frames);
 		for (int j = 0; j < 101; j++) {
 			printf("%d ", set[j]);
 		}
