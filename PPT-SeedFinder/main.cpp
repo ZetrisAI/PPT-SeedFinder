@@ -123,23 +123,9 @@ void set_iterate(int* set, int index, int hold, uint rng, uint cost) {
 	}
 
 	ulong offset = (ulong)bin + (BIN_OFFSETS[pc] + (ulong)set_encode(&set[s], index, hold)) * BIN_ELEMENT;
-	if (rng == 0x0cc39230u) {
-		printf("i hit the thing\n");
-		for (int i = 0; i < BIN_ELEMENT; i++) {
-			printf("%02x ", *((char*)(offset + i)));
-		}
-		printf("\n");
-	}
 
 	for (int i = 0; i < 8; i++) {
 		solution result = *((solution*)(offset + i * sizeof(solution)));
-		if (rng == 0x0cc39230u) {
-			printf("%02x ", (char)result.solution_exists);
-			for (int j = 0; j < 10; j++) {
-				printf("%02x ", (char)result.piece_infos[j]);
-			}
-			printf("\n");
-		}
 
 		if (result.solution_exists) {
 			uint new_cost = cost + frames_calculate(result.piece_infos);
