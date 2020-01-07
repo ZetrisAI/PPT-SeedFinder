@@ -171,20 +171,16 @@ void rng_check_progress() {
 int main() {
 	printf("\n Puyo Puyo Tetris Sprint - 10 Tetris PC RNG Seed Finder\n by mat1jaczyyy with help from knewjade and ChiCubed\n\n > Loading binary PC knowledge base...\n");
 
-	ulong alloc_size = BIN_MAX * 8 * sizeof(solution);
+	boost::iostreams::mapped_file_source file;
 
-	printf("  > Allocating %llu bytes (%.2fGB) of memory...\n", alloc_size, (double)alloc_size / (1024 * 1024 * 1024));
+	file.open(MOV_FILENAME, BIN_SIZE);
 
-	bin = (solution*)malloc(alloc_size);
-
-	if (bin == NULL) {
-		printf("  > Failed to allocate memory!\n");
+	if (!file.is_open()) {
+		printf("  > Failed to open PC knowledge base!\n");
 		exit(1);
 	}
 
-	FILE* handle = fopen(MOV_FILENAME, "rb");
-	(void)fread(bin, BIN_MAX * BIN_ELEMENT, 1, handle);
-	fclose(handle);
+	bin = (solution*)file.data();
 
 	printf("  > Done\n\n > Starting RNG search...\n");
 
@@ -212,6 +208,8 @@ int main() {
 		}
 		printf("\n");
 	}
+
+	file.close();
 
 	exit(0);
 }
