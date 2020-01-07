@@ -141,11 +141,10 @@ void set_iterate(int* set, int index, int hold, rng_solution candidate) {
 			next_candidate.tetrises++;
 			next_candidate.frames += frames_calculate(result.piece_infos);
 			next_candidate.tets[index] = true;
-			next_candidate.holds[index] = i - 1;
 		}
+		next_candidate.holds[index] = i - 1;
 
 		if (index == SET_ITERATIONS - 1) {
-
 			if (next_candidate.tetrises >= max_tetrises) {
 				solutions_locker.lock();
 				solutions.push_back(next_candidate);
