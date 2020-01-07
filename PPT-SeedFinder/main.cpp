@@ -133,7 +133,7 @@ void set_iterate(int* set, int index, int hold, rng_solution candidate) {
 
 	ulong offset = (ulong)bin + (BIN_OFFSETS[pc] + (ulong)set_encode(&set[s], index, hold)) * BIN_ELEMENT;
 
-	for (int i = 0; i < 8; i++) {
+	for (int i = hold != -1; i < 8; i++) {
 		solution result = *((solution*)(offset + i * sizeof(solution)));
 		rng_solution next_candidate = candidate;
 
