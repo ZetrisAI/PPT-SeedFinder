@@ -61,7 +61,9 @@ typedef struct {
 
 bool operator <(const rng_solution& x, const rng_solution& y) {
 	return (x.tetrises == y.tetrises)
-		? x.frames < y.frames
+		? (x.frames == y.frames)
+			? x.rng < y.rng
+			: x.frames < y.frames
 		: x.tetrises > y.tetrises;
 }
 
