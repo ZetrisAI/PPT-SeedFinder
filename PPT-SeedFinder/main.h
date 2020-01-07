@@ -7,7 +7,11 @@
 #include <thread>
 #include <vector>
 
-#include <boost/iostreams/device/mapped_file.hpp>
+#define USE_MEMORY_MAP 1
+
+#if USE_MEMORY_MAP
+	#include <boost/iostreams/device/mapped_file.hpp>
+#endif
 
 typedef unsigned char uchar;
 typedef unsigned int uint;

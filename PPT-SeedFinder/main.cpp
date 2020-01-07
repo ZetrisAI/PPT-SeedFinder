@@ -174,16 +174,36 @@ void rng_check_progress() {
 int main() {
 	printf("\n Puyo Puyo Tetris Sprint - 10 Tetris PC RNG Seed Finder\n by mat1jaczyyy with help from knewjade and ChiCubed\n\n > Loading binary PC knowledge base...\n");
 
-	boost::iostreams::mapped_file_source file;
+	#if USE_MEMORY_MAP
+		boost::iostreams::mapped_file_source file;
 
-	file.open(MOV_FILENAME, BIN_SIZE);
+		file.open(MOV_FILENAME, BIN_SIZE);
 
-	if (!file.is_open()) {
-		printf("  > Failed to open PC knowledge base!\n");
-		exit(1);
-	}
+		if (!file.is_open()) {
+			printf("  > Failed to open PC knowledge base!\n");
+			exit(1);
+		}
 
-	bin = (solution*)file.data();
+		bin = (solution*)file.data();
+
+	#else
+		printf("  > Allocating %llu bytes (%.2fGB) of memory...\n", BIN_SIZE, (double)BIN_SIZE / (1024. * 1024 * 1024));
+
+		bin = (solution*)malloc(BIN_SIZE);
+		if (bin == NULL) {
+			printf("  > Failed to allocate memory!\n");
+			exit(1);
+		}
+
+		FILE* handle = fopen(MOV_FILENAME, "rb");
+		if (handle == NULL) {
+			printf("  > Failed to open PC knowledge base!\n");
+			exit(1);
+		}
+
+		(void)fread(bin, BIN_MAX * BIN_ELEMENT, 1, handle);
+		fclose(handle);
+	#endif
 
 	printf("  > Done\n\n > Starting RNG search...\n");
 
@@ -212,7 +232,9 @@ int main() {
 		printf("\n");
 	}
 
-	file.close();
+	#if USE_MEMORY_MAP
+		file.close();
+	#endif
 
 	exit(0);
 }
