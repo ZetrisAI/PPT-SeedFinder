@@ -52,8 +52,8 @@ const ulong BIN_OFFSETS[15] = {
 
 typedef struct {
 	uint rng;
-	uint tetrises;
-	uint frames;
+	int tetrises;
+	int frames;
 
 	bool tets[SET_ITERATIONS];
 	int holds[SET_ITERATIONS];

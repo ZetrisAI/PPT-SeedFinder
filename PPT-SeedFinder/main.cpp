@@ -5,8 +5,7 @@ solution* bin;
 std::vector<rng_solution> solutions;
 boost::mutex solutions_locker;
 
-int max_tetrises = 0;
-bool restart = false;
+int max_tetrises = SET_ITERATIONS;
 
 const char pieceSymbols[7] = {'S', 'Z', 'J', 'L', 'T', 'O', 'I'};
 
@@ -124,8 +123,6 @@ uint frames_calculate(char* pieces) {
 }
 
 void set_iterate(int* set, int index, int hold, rng_solution candidate) {
-	if (restart) return;
-
 	int pc = index % 7;
 	int s = index * 10;
 
@@ -148,20 +145,14 @@ void set_iterate(int* set, int index, int hold, rng_solution candidate) {
 		}
 
 		if (index == SET_ITERATIONS - 1) {
-			solutions_locker.lock();
 
 			if (next_candidate.tetrises >= max_tetrises) {
-				if (next_candidate.tetrises > max_tetrises) {
-					max_tetrises = next_candidate.tetrises;
-					restart = true;
-				}
-
+				solutions_locker.lock();
 				solutions.push_back(next_candidate);
+				solutions_locker.unlock();
 			}
 
-			solutions_locker.unlock();
-
-		} else if (index - (int)next_candidate.tetrises < SET_ITERATIONS - max_tetrises)
+		} else if (index - next_candidate.tetrises < SET_ITERATIONS - max_tetrises)
 			set_iterate(set, index + 1, i - 1, next_candidate);
 	}
 }
@@ -170,8 +161,6 @@ void rng_search(uint i) {
 	printf("  > Thread %d started\n", std::this_thread::get_id());
 
 	do {
-		if (restart) return;
-
 		rng_progress = i;
 		
 		int set[SET_ITERATIONS * 10 + 1];
@@ -223,14 +212,11 @@ int main() {
 		fclose(handle);
 	#endif
 
-	printf("  > Done\n\n > Starting RNG search...\n");
+	printf("  > Done\n\n > Starting RNG search with Tetris count %u...\n", max_tetrises);
 
 	std::thread progress(rng_check_progress);
 
 	do {
-		restart = false;
-		solutions.clear();
-
 		std::thread threads[THREADS];
 		for (int i = 0; i < THREADS; i++) {
 			threads[i] = std::thread(rng_search, i);
@@ -240,8 +226,8 @@ int main() {
 			if (threads[i].joinable()) threads[i].join();
 		}
 
-		if (restart) printf("\n  > Restarting: found max Tetris count %u\n", max_tetrises);
-	} while (restart);
+		if (solutions.empty()) printf("\n  > Nothing found, restarting RNG search with Tetris count %u\n", --max_tetrises);
+	} while (solutions.empty());
 
 	printf("  > Done\n\n > Found a total of %llu RNG values\n\n > Sorting results...\n", solutions.size());
 
