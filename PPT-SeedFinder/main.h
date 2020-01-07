@@ -8,6 +8,7 @@
 #include <vector>
 #include <boost/thread.hpp>
 
+#define ALLOW_INVALID_SEEDS 0
 #define USE_MEMORY_MAP 1
 
 #if USE_MEMORY_MAP
@@ -72,6 +73,11 @@ const int FACT[8] = {1, 1, 2, 6, 24, 120, 720, 5040};
 #define THREADS 14
 
 #define MOV_FILENAME "C:\\all_mov.bin"
-#define RNG_MAX 0xFFFFu
+
+#if ALLOW_INVALID_SEEDS
+	#define RNG_MAX 0xFFFFFFFFu
+#else
+	#define RNG_MAX 0xFFFFu
+#endif
 
 #endif
