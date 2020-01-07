@@ -177,6 +177,23 @@ void rng_check_progress() {
 	}
 }
 
+void print_solution(rng_solution* solution) {
+	int set[SET_ITERATIONS * 10 + 1];
+	rng_generate(solution->rng, set);
+
+	printf("  > 0x%04x (tet: %u; cost: %u; path:", solution->rng, solution->tetrises, solution->frames);
+
+	for (int j = 0; j < SET_ITERATIONS; j++)
+		printf(" %d%c", solution->tets[j], pieceSymbols[solution->holds[j]]);
+
+	printf(") - ");
+
+	for (int j = 0; j < SET_ITERATIONS * 10 + 1; j++)
+		printf("%c", pieceSymbols[set[j]]);
+
+	printf("\n");
+}
+
 int main() {
 	printf("\n Puyo Puyo Tetris Sprint - 10 Tetris PC RNG Seed Finder\n by mat1jaczyyy with help from knewjade and ChiCubed\n\n > Loading binary PC knowledge base...\n");
 
@@ -225,28 +242,34 @@ int main() {
 			if (threads[i].joinable()) threads[i].join();
 		}
 
-		if (solutions.empty()) printf("\n  > Nothing found, restarting RNG search with Tetris count %u\n", --max_tetrises);
+		if (solutions.empty()) printf("\n > Nothing found, restarting RNG search with Tetris count %u\n", --max_tetrises);
 	} while (solutions.empty());
 
-	printf("  > Done\n\n > Found a total of %llu RNG values\n\n > Sorting results...\n", solutions.size());
+	printf("  > Done\n\n > Found a total of %llu RNG values\n  > Sorting results...\n", solutions.size());
 
 	std::sort(solutions.begin(), solutions.end());
 
+	std::vector<rng_solution> optimal_solutions;
+
 	for (int i = 0; i < solutions.size(); i++) {
-		int set[105];
-		rng_generate(solutions[i].rng, set);
-		
-		printf("  > 0x%04x (tet: %u; cost: %u; path:", solutions[i].rng, solutions[i].tetrises, solutions[i].frames);
-		
-		for (int j = 0; j < SET_ITERATIONS; j++)
-			printf(" %d%c", solutions[i].tets[j], pieceSymbols[solutions[i].holds[j]]);
-		
-		printf(") - ");
+		//print_solution(&solutions[i]);
 
-		for (int j = 0; j < SET_ITERATIONS * 10 + 1; j++)
-			printf("%c", pieceSymbols[set[j]]);
+		bool add = true;
 
-		printf("\n");
+		for (int j = 0; j < optimal_solutions.size(); j++) {
+			if (optimal_solutions[j].rng == solutions[i].rng) {
+				add = !(optimal_solutions[j] < solutions[i]);
+				if (!add) break;
+			}
+		}
+
+		if (add) optimal_solutions.push_back(solutions[i]);
+	}
+
+	printf("\n > Found %llu optimal solutions\n", optimal_solutions.size());
+
+	for (int i = 0; i < optimal_solutions.size(); i++) {
+		print_solution(&optimal_solutions[i]);
 	}
 
 	#if USE_MEMORY_MAP
