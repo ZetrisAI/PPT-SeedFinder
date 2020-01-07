@@ -70,6 +70,9 @@ uint rng_next(uint rng) {
 }
 
 void rng_generate(uint rng, int* set) {
+	for (int i = 0; i < 1973; i++) // Global RNG to Piece generation RNG
+		rng = rng_next(rng);
+
 	for (int x = 0; x < 105;) {
 		int bag[7];
 		for (int i = 0; i < 7; i++) bag[i] = i;
