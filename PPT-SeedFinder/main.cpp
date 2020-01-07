@@ -134,7 +134,7 @@ void set_iterate(int* set, int index, int hold, uint rng, uint cost) {
 			uint new_cost = cost + frames_calculate(result.piece_infos);
 
 			if (index == 9) {
-				printf("  > Found 0x%08x! %d\n", rng, new_cost);
+				printf("  > Found 0x%04x! %d\n", rng, new_cost);
 
 				rng_solution solved;
 				solved.rng = rng;
@@ -167,7 +167,7 @@ void rng_search(uint i) {
 void rng_check_progress() {
 	while (true) {
 		(void)getchar();
-		printf("\n   > Current RNG: 0x%08x\n   > Found RNGs: %llu\n\n", rng_progress, solutions.size());
+		printf("\n   > Current RNG: 0x%04x\n   > Found RNGs: %llu\n\n", rng_progress, solutions.size());
 	}
 }
 
@@ -205,7 +205,7 @@ int main() {
 		int set[105];
 		rng_generate(solutions[i].rng, set);
 		
-		printf("  > 0x%08x (cost: %u) - ", solutions[i].rng, solutions[i].frames);
+		printf("  > 0x%04x (cost: %u) - ", solutions[i].rng, solutions[i].frames);
 		for (int j = 0; j < 101; j++) {
 			printf("%d ", set[j]);
 		}
