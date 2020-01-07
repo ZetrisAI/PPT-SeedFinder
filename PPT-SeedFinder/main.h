@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <thread>
 #include <vector>
+#include <boost/thread.hpp>
 
 #define USE_MEMORY_MAP 1
 
@@ -16,6 +17,8 @@
 typedef unsigned char uchar;
 typedef unsigned int uint;
 typedef unsigned long long ulong;
+
+#define SET_ITERATIONS 10
 
 typedef struct {
 	bool solution_exists : 8;
@@ -49,18 +52,24 @@ const ulong BIN_OFFSETS[15] = {
 
 typedef struct {
 	uint rng;
+	uint tetrises;
 	uint frames;
+
+	bool tets[SET_ITERATIONS];
+	int holds[SET_ITERATIONS];
 } rng_solution;
 
 bool operator <(const rng_solution& x, const rng_solution& y) {
-	return x.frames < y.frames;
+	return (x.tetrises == y.tetrises)
+		? x.frames < y.frames
+		: x.tetrises > y.tetrises;
 }
 
 const int FACT[8] = {1, 1, 2, 6, 24, 120, 720, 5040};
 
 #define THREADS 14
 
-#define MOV_FILENAME "D:\\all_mov.bin"
+#define MOV_FILENAME "C:\\all_mov.bin"
 #define RNG_MAX 0xFFFFu
 
 #endif

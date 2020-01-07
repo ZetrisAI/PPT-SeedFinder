@@ -3,6 +3,10 @@
 solution* bin;
 
 std::vector<rng_solution> solutions;
+boost::mutex solutions_locker;
+
+int max_tetrises = 0;
+bool restart = false;
 
 int perm_encode(int n, int* perm) {
 	int encoded = 0;
@@ -73,7 +77,7 @@ void rng_generate(uint rng, int* set) {
 	for (int i = 0; i < 1973; i++) // Global RNG to Piece generation RNG
 		rng = rng_next(rng);
 
-	for (int x = 0; x < 105;) {
+	for (int x = 0; x < SET_ITERATIONS * 10 + 1;) {
 		int bag[7];
 		for (int i = 0; i < 7; i++) bag[i] = i;
 
@@ -88,7 +92,8 @@ void rng_generate(uint rng, int* set) {
 			bag[newIndex] = oldValue;
 		}
 
-		for (int i = 0; i < 7; i++) set[x++] = bag[i];
+		for (int i = 0; i < 7 && x < SET_ITERATIONS * 10 + 1; i++)
+			set[x++] = bag[i];
 	}
 }
 
@@ -116,7 +121,9 @@ uint frames_calculate(char* pieces) {
 	return cost;
 }
 
-void set_iterate(int* set, int index, int hold, uint rng, uint cost) {
+void set_iterate(int* set, int index, int hold, rng_solution candidate) {
+	if (restart) return;
+
 	int pc = index % 7;
 	int s = index * 10;
 
@@ -129,22 +136,31 @@ void set_iterate(int* set, int index, int hold, uint rng, uint cost) {
 
 	for (int i = 0; i < 8; i++) {
 		solution result = *((solution*)(offset + i * sizeof(solution)));
+		rng_solution next_candidate = candidate;
 
 		if (result.solution_exists) {
-			uint new_cost = cost + frames_calculate(result.piece_infos);
-
-			if (index == 9) {
-				printf("  > Found 0x%04x! %d\n", rng, new_cost);
-
-				rng_solution solved;
-				solved.rng = rng;
-				solved.frames = new_cost;
-				solutions.push_back(solved);
-
-			} else {
-				set_iterate(set, index + 1, i - 1, rng, new_cost);
-			}
+			next_candidate.tetrises++;
+			next_candidate.frames += frames_calculate(result.piece_infos);
+			next_candidate.tets[index] = true;
+			next_candidate.holds[index] = i - 1;
 		}
+
+		if (index == SET_ITERATIONS - 1) {
+			solutions_locker.lock();
+
+			if (next_candidate.tetrises >= max_tetrises) {
+				if (next_candidate.tetrises > max_tetrises) {
+					max_tetrises = next_candidate.tetrises;
+					restart = true;
+				}
+
+				solutions.push_back(next_candidate);
+			}
+
+			solutions_locker.unlock();
+
+		} else if (index - (int)next_candidate.tetrises < SET_ITERATIONS - max_tetrises)
+			set_iterate(set, index + 1, i - 1, next_candidate);
 	}
 }
 
@@ -152,14 +168,14 @@ void rng_search(uint i) {
 	printf("  > Thread %d started\n", std::this_thread::get_id());
 
 	do {
+		if (restart) return;
+
 		rng_progress = i;
 		
-		int set[105];
+		int set[SET_ITERATIONS * 10 + 1];
 		rng_generate(i, set);
 
-		uint cost = 0;
-
-		set_iterate(set, 0, -1, i, cost);
+		set_iterate(set, 0, -1, {i});
 
 	} while ((i += THREADS) - THREADS < RNG_MAX - THREADS + 1);
 }
@@ -207,15 +223,23 @@ int main() {
 
 	printf("  > Done\n\n > Starting RNG search...\n");
 
-	std::thread threads[THREADS];
-	for (int i = 0; i < THREADS; i++) {
-		threads[i] = std::thread(rng_search, i);
-	}
 	std::thread progress(rng_check_progress);
 
-	for (int i = 0; i < THREADS; i++) {
-		if (threads[i].joinable()) threads[i].join();
-	}
+	do {
+		restart = false;
+		solutions.clear();
+
+		std::thread threads[THREADS];
+		for (int i = 0; i < THREADS; i++) {
+			threads[i] = std::thread(rng_search, i);
+		}
+
+		for (int i = 0; i < THREADS; i++) {
+			if (threads[i].joinable()) threads[i].join();
+		}
+
+		if (restart) printf("\n  > Restarting: found max Tetris count %u\n", max_tetrises);
+	} while (restart);
 
 	printf("  > Done\n\n > Found a total of %llu RNG values\n\n > Sorting results...\n", solutions.size());
 
@@ -225,10 +249,16 @@ int main() {
 		int set[105];
 		rng_generate(solutions[i].rng, set);
 		
-		printf("  > 0x%04x (cost: %u) - ", solutions[i].rng, solutions[i].frames);
-		for (int j = 0; j < 101; j++) {
-			printf("%d ", set[j]);
-		}
+		printf("  > 0x%04x - tet: %u; cost: %u; path:", solutions[i].rng, solutions[i].tetrises, solutions[i].frames);
+		
+		for (int j = 0; j < SET_ITERATIONS; j++)
+			printf(" %d%d", solutions[i].tets[j], solutions[i].holds[j]);
+		
+		printf("\n   >");
+
+		for (int j = 0; j < 101; j++)
+			printf(" %d", set[j]);
+
 		printf("\n");
 	}
 
