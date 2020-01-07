@@ -57,6 +57,6 @@ const int FACT[8] = {1, 1, 2, 6, 24, 120, 720, 5040};
 #define THREADS 10
 
 #define MOV_FILENAME "D:\\all_mov.bin"
-#define RNG_MAX 0xFFFFFFFFu
+#define RNG_MAX 0xFFFFu
 
 #endif
