@@ -173,7 +173,7 @@ void rng_search(uint i) {
 void rng_check_progress() {
 	while (true) {
 		(void)getchar();
-		printf("\n   > Current RNG: 0x%04x\n   > Found RNGs: %llu\n\n", rng_progress, solutions.size());
+		printf("\n   > Current RNG: 0x%08X\n   > Found RNGs: %llu\n\n", rng_progress, solutions.size());
 	}
 }
 
@@ -181,7 +181,7 @@ void print_solution(rng_solution* solution) {
 	int set[SET_ITERATIONS * 10 + 1];
 	rng_generate(solution->rng, set);
 
-	printf("  > 0x%04x (tet: %u; cost: %u; path:", solution->rng, solution->tetrises, solution->frames);
+	printf("  > 0x%08X (tet: %u; cost: %u; path:", solution->rng, solution->tetrises, solution->frames);
 
 	for (int j = 0; j < SET_ITERATIONS; j++)
 		printf(" %d%c", solution->tets[j], pieceSymbols[solution->holds[j]]);
