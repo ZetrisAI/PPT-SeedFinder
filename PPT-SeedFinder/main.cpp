@@ -102,8 +102,8 @@ uint frames_calculate(char* pieces) {
 	uint cost = 0;
 
 	for (int i = 0; i < 10; i++) {
-		uint r = pieces[i] >> 1 & 8;
-		uint m = pieces[i] >> 4 & 16;
+		uint r = pieces[i] >> 1 & 7;
+		uint m = pieces[i] >> 4 & 15;
 
 		cost += pieces[i] & 1;
 
