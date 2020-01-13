@@ -58,6 +58,7 @@ typedef struct {
 
 	bool tets[SET_ITERATIONS];
 	int holds[SET_ITERATIONS];
+	int costs[SET_ITERATIONS];
 } rng_solution;
 
 bool operator <(const rng_solution& x, const rng_solution& y) {

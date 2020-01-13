@@ -139,7 +139,7 @@ void set_iterate(int* set, int index, int hold, rng_solution candidate) {
 
 		if (result.solution_exists) {
 			next_candidate.tetrises++;
-			next_candidate.frames += frames_calculate(result.piece_infos);
+			next_candidate.frames += next_candidate.costs[index] = frames_calculate(result.piece_infos);
 			next_candidate.tets[index] = true;
 		}
 		next_candidate.holds[index] = i - 1;
@@ -184,7 +184,7 @@ void print_solution(rng_solution* solution) {
 	printf("  > 0x%08X (tet: %u; cost: %u; path:", solution->rng, solution->tetrises, solution->frames);
 
 	for (int j = 0; j < SET_ITERATIONS; j++)
-		printf(" %d%c", solution->tets[j], pieceSymbols[solution->holds[j]]);
+		printf(" %d%c(%d)", solution->tets[j], pieceSymbols[solution->holds[j]], solution->costs[j]);
 
 	printf(") - ");
 
@@ -252,8 +252,6 @@ int main() {
 	std::vector<rng_solution> optimal_solutions;
 
 	for (int i = 0; i < solutions.size(); i++) {
-		//print_solution(&solutions[i]);
-
 		bool add = true;
 
 		for (int j = 0; j < optimal_solutions.size(); j++) {
