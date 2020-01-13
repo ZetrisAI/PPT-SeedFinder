@@ -233,14 +233,19 @@ int main() {
 	std::thread progress(rng_check_progress);
 
 	do {
-		std::thread threads[THREADS];
-		for (int i = 0; i < THREADS; i++) {
-			threads[i] = std::thread(rng_search, i);
-		}
+		#ifdef SEARCH_SPECIFIC_SEED
+			rng_search(SEARCH_SPECIFIC_SEED);
 
-		for (int i = 0; i < THREADS; i++) {
-			if (threads[i].joinable()) threads[i].join();
-		}
+		#else
+			std::thread threads[THREADS];
+			for (int i = 0; i < THREADS; i++) {
+				threads[i] = std::thread(rng_search, i);
+			}
+
+			for (int i = 0; i < THREADS; i++) {
+				if (threads[i].joinable()) threads[i].join();
+			}
+		#endif
 
 		if (solutions.empty()) printf("\n > Nothing found, restarting RNG search with Tetris count %u\n", --max_tetrises);
 	} while (solutions.empty());
