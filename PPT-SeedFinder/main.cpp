@@ -7,7 +7,7 @@ boost::mutex solutions_locker;
 
 int max_tetrises = SET_ITERATIONS;
 
-const char pieceSymbols[7] = {'S', 'Z', 'J', 'L', 'T', 'O', 'I'};
+const char pieceSymbols[8] = {'E', 'S', 'Z', 'J', 'L', 'T', 'O', 'I'};
 
 int perm_encode(int n, int* perm) {
 	int encoded = 0;
@@ -213,12 +213,12 @@ void print_solution(rng_solution* solution) {
 	printf("  > 0x%08X (tet: %u; cost: %u; path:", solution->rng, solution->tetrises, solution->frames);
 
 	for (int j = 0; j < SET_ITERATIONS; j++)
-		printf(" %d%c(%d)", solution->ending[j], pieceSymbols[solution->holds[j]], solution->costs[j]);
+		printf(" %d%c(%d)", solution->ending[j], pieceSymbols[solution->holds[j] + 1], solution->costs[j]);
 
 	printf(") - ");
 
 	for (int j = 0; j < SET_ITERATIONS * 10 + 1; j++)
-		printf("%c", pieceSymbols[set[j]]);
+		printf("%c", pieceSymbols[set[j] + 1]);
 
 	printf("\n");
 }
