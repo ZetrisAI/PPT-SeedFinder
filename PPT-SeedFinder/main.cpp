@@ -223,6 +223,22 @@ void print_solution(rng_solution* solution) {
 	printf("\n");
 }
 
+bool endings_equal(rng_solution* a, rng_solution* b) {
+	for (int i = 0; i < SET_ITERATIONS; i++) {
+		if (a->ending[i] != b->ending[i]) return false;
+	}
+	
+	return true;
+}
+
+bool non_tets_equal(rng_solution* a, rng_solution* b) {
+	for (int i = 0; i < SET_ITERATIONS; i++) {
+		if (a->ending[i] < 4 && a->holds[i] != b->holds[i]) return false;
+	}
+
+	return true;
+}
+
 int main() {
 	printf("\n Puyo Puyo Tetris Sprint - Tetris PC RNG Seed Finder\n by mat1jaczyyy with help from knewjade and ChiCubed\n\n > Loading binary PC knowledge base...\n");
 
@@ -286,11 +302,13 @@ int main() {
 	std::vector<rng_solution> optimal_solutions;
 
 	for (int i = 0; i < solutions.size(); i++) {
+		print_solution(&solutions[i]);
 		bool add = true;
 
 		for (int j = 0; j < optimal_solutions.size(); j++) {
-			if (optimal_solutions[j].rng == solutions[i].rng) {
-				add = !(optimal_solutions[j] < solutions[i]);
+			if (optimal_solutions[j].rng == solutions[i].rng && endings_equal(&optimal_solutions[j], &solutions[i])) {
+				add = (solutions[i] < optimal_solutions[j]) || !non_tets_equal(&optimal_solutions[j], &solutions[i]);
+
 				if (!add) break;
 			}
 		}
