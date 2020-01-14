@@ -233,7 +233,7 @@ bool endings_equal(rng_solution* a, rng_solution* b) {
 
 bool non_tets_equal(rng_solution* a, rng_solution* b) {
 	for (int i = 0; i < SET_ITERATIONS; i++) {
-		if (a->ending[i] < 4 && a->holds[i] != b->holds[i]) return false;
+		if ((a->ending[i] < 4 || (i < SET_ITERATIONS - 1 && a->ending[i + 1] < 4)) && a->holds[i] != b->holds[i]) return false;
 	}
 
 	return true;
