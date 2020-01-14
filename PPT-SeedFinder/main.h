@@ -58,7 +58,7 @@ typedef struct {
 	int tetrises;
 	int frames;
 
-	bool tets[SET_ITERATIONS];
+	int ending[SET_ITERATIONS];
 	int holds[SET_ITERATIONS];
 	int costs[SET_ITERATIONS];
 } rng_solution;

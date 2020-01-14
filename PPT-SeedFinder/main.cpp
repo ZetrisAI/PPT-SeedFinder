@@ -140,8 +140,37 @@ void set_iterate(int* set, int index, int hold, rng_solution candidate) {
 		if (result.solution_exists) {
 			next_candidate.tetrises++;
 			next_candidate.frames += next_candidate.costs[index] = frames_calculate(result.piece_infos);
-			next_candidate.tets[index] = true;
-		}
+			next_candidate.ending[index] = 4;
+		
+		} else if (hold != -1
+			? (set[s + 9] == 2 || set[s + 9] == 3 || set[s + 9] == i - 1)
+			: i != -1
+				? (set[s + 10] == 2 || set[s + 10] == 3 || set[s + 10] == i - 1)
+				: (set[s + 9] == 2 || set[s + 9] == 3)
+		) {
+			next_candidate.frames += 40;
+			next_candidate.ending[index] = 3;
+
+		} else if (hold != -1
+			? (set[s + 9] == 4 || set[s + 9] == 5 || set[s + 9] == i - 1)
+			: i != -1
+				? (set[s + 10] == 4 || set[s + 10] == 5 || set[s + 10] == i - 1)
+				: (set[s + 9] == 4 || set[s + 9] == 5)
+		) {
+			next_candidate.frames += 45;
+			next_candidate.ending[index] = 2;
+
+		} else if (hold != -1
+			? (set[s + 9] == 6 || set[s + 9] == i - 1)
+			: i != -1
+				? (set[s + 10] == 6 || set[s + 10] == i - 1)
+				: (set[s + 9] == 6)
+			) {
+			next_candidate.frames += 45;
+			next_candidate.ending[index] = 1;
+
+		} else continue;
+
 		next_candidate.holds[index] = i - 1;
 
 		if (index == SET_ITERATIONS - 1) {
@@ -184,7 +213,7 @@ void print_solution(rng_solution* solution) {
 	printf("  > 0x%08X (tet: %u; cost: %u; path:", solution->rng, solution->tetrises, solution->frames);
 
 	for (int j = 0; j < SET_ITERATIONS; j++)
-		printf(" %d%c(%d)", solution->tets[j], pieceSymbols[solution->holds[j]], solution->costs[j]);
+		printf(" %d%c(%d)", solution->ending[j], pieceSymbols[solution->holds[j]], solution->costs[j]);
 
 	printf(") - ");
 
@@ -195,7 +224,7 @@ void print_solution(rng_solution* solution) {
 }
 
 int main() {
-	printf("\n Puyo Puyo Tetris Sprint - 10 Tetris PC RNG Seed Finder\n by mat1jaczyyy with help from knewjade and ChiCubed\n\n > Loading binary PC knowledge base...\n");
+	printf("\n Puyo Puyo Tetris Sprint - Tetris PC RNG Seed Finder\n by mat1jaczyyy with help from knewjade and ChiCubed\n\n > Loading binary PC knowledge base...\n");
 
 	#if USE_MEMORY_MAP
 		boost::iostreams::mapped_file_source file;
