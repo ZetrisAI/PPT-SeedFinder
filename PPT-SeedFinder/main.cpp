@@ -141,35 +141,37 @@ void set_iterate(int* set, int index, int hold, rng_solution candidate) {
 			next_candidate.tetrises++;
 			next_candidate.frames += next_candidate.costs[index] = frames_calculate(result.piece_infos);
 			next_candidate.ending[index] = 4;
-		
-		} else if (hold != -1
-			? (set[s + 9] == 2 || set[s + 9] == 3 || set[s + 9] == i - 1)
-			: i != -1
-				? (set[s + 10] == 2 || set[s + 10] == 3 || set[s + 10] == i - 1)
-				: (set[s + 9] == 2 || set[s + 9] == 3)
-		) {
-			next_candidate.frames += 40;
-			next_candidate.ending[index] = 3;
-
-		} else if (hold != -1
-			? (set[s + 9] == 4 || set[s + 9] == 5 || set[s + 9] == i - 1)
-			: i != -1
-				? (set[s + 10] == 4 || set[s + 10] == 5 || set[s + 10] == i - 1)
-				: (set[s + 9] == 4 || set[s + 9] == 5)
-		) {
-			next_candidate.frames += 45;
-			next_candidate.ending[index] = 2;
-
-		} else if (hold != -1
-			? (set[s + 9] == 6 || set[s + 9] == i - 1)
-			: i != -1
-				? (set[s + 10] == 6 || set[s + 10] == i - 1)
-				: (set[s + 9] == 6)
+		}
+		#if REASONABLE_DT_ASSUMPTIONS
+			else if (hold != -1
+				? (set[s + 9] == 2 || set[s + 9] == 3 || set[s + 9] == i - 1)
+				: i != -1
+					? (set[s + 10] == 2 || set[s + 10] == 3 || set[s + 10] == i - 1)
+					: (set[s + 9] == 2 || set[s + 9] == 3)
 			) {
-			next_candidate.frames += 45;
-			next_candidate.ending[index] = 1;
+				next_candidate.frames += 40;
+				next_candidate.ending[index] = 3;
 
-		} else continue;
+			} else if (hold != -1
+				? (set[s + 9] == 4 || set[s + 9] == 5 || set[s + 9] == i - 1)
+				: i != -1
+					? (set[s + 10] == 4 || set[s + 10] == 5 || set[s + 10] == i - 1)
+					: (set[s + 9] == 4 || set[s + 9] == 5)
+			) {
+				next_candidate.frames += 45;
+				next_candidate.ending[index] = 2;
+
+			} else if (hold != -1
+				? (set[s + 9] == 6 || set[s + 9] == i - 1)
+				: i != -1
+					? (set[s + 10] == 6 || set[s + 10] == i - 1)
+					: (set[s + 9] == 6)
+				) {
+				next_candidate.frames += 45;
+				next_candidate.ending[index] = 1;
+
+			} else continue;
+		#endif
 
 		next_candidate.holds[index] = i - 1;
 
@@ -302,7 +304,7 @@ int main() {
 	std::vector<rng_solution> optimal_solutions;
 
 	for (int i = 0; i < solutions.size(); i++) {
-		print_solution(&solutions[i]);
+		//print_solution(&solutions[i]);
 		bool add = true;
 
 		for (int j = 0; j < optimal_solutions.size(); j++) {
