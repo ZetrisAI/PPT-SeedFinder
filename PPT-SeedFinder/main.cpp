@@ -98,30 +98,6 @@ void rng_generate(uint rng, int* set) {
 	}
 }
 
-uint frames_calculate(char* pieces) { 
-	uint cost = 0;
-
-	for (int i = 0; i < 10; i++) {
-		uint r = pieces[i] >> 1 & 7;
-		uint m = pieces[i] >> 4 & 15;
-
-		cost += pieces[i] & 1;
-
-		// note: we count the frame we hard drop on
-		if (m == 0 && r == 0) {
-			cost += 1;
-
-		} else if (m >= r) {
-			cost += m * 2;
-
-		} else {
-			cost += r * 2 - 1;
-		}
-	}
-
-	return cost;
-}
-
 void set_iterate(int* set, int index, int hold, rng_solution candidate) {
 	int pc = index % 7;
 	int s = index * 10;
@@ -139,7 +115,7 @@ void set_iterate(int* set, int index, int hold, rng_solution candidate) {
 
 		if (result.solution_exists) {
 			next_candidate.tetrises++;
-			next_candidate.frames += next_candidate.costs[index] = frames_calculate(result.piece_infos);
+			next_candidate.frames += next_candidate.costs[index] = result.frames;
 			next_candidate.ending[index] = 4;
 		}
 		#if REASONABLE_DT_ASSUMPTIONS

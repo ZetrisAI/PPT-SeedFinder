@@ -8,11 +8,11 @@
 #include <vector>
 #include <boost/thread.hpp>
 
-//#define SEARCH_SPECIFIC_SEED 0xC0952FF5u
-#define REASONABLE_DT_ASSUMPTIONS 1
+//#define SEARCH_SPECIFIC_SEED 0x977B6F22u
+#define REASONABLE_DT_ASSUMPTIONS 0
 
 #define ALLOW_INVALID_SEEDS 1
-#define USE_MEMORY_MAP 1
+#define USE_MEMORY_MAP 0
 
 #if USE_MEMORY_MAP
 	#include <boost/iostreams/device/mapped_file.hpp>
@@ -25,8 +25,8 @@ typedef unsigned long long ulong;
 #define SET_ITERATIONS 10
 
 typedef struct {
-	bool solution_exists : 8;
-	char piece_infos[10];
+	uchar frames : 7;
+	bool solution_exists : 1;
 } solution;
 
 #define BIN_ELEMENT 8llu * sizeof(solution)
@@ -76,7 +76,7 @@ const int FACT[8] = {1, 1, 2, 6, 24, 120, 720, 5040};
 
 #define THREADS 12
 
-#define MOV_FILENAME "C:\\all_mov.bin"
+#define MOV_FILENAME "D:\\all_mov.bin"
 
 #ifdef SEARCH_SPECIFIC_SEED
 	#define RNG_MAX SEARCH_SPECIFIC_SEED
