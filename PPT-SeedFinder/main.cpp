@@ -70,22 +70,41 @@ int set_encode(int* set, int index, int hold) {
 
 uint rng_progress;
 
-uint rng_next(uint rng) {
-	return rng * 0x5D588B65 + 0x269EC3;
+ulong rng_next(ulong& rng, uint limit) {
+	#if PPT2
+		ulong next = rng * 0x5851F42D4C957F2Dllu + 0x01llu;
+		rng = (next >> 0x20) & 0x7FFFFFFFu;
+
+		return limit == 0? rng : (next - (next / limit) * limit);
+
+	#else // PPT1
+		ulong next = (rng * 0x5D588B65 + 0x269EC3) & 0xFFFFFFFFu;
+		rng = next;
+
+		return ((next >> 16) * limit) >> 16;
+	#endif
 }
 
-void rng_generate(uint rng, int* set) {
+void rng_next(ulong& rng) {
+	rng_next(rng, 0);
+}
+
+void rng_generate(ulong rng, int* set) {
 	for (int i = 0; i < 1973; i++) // Global RNG to Piece generation RNG
-		rng = rng_next(rng);
+		rng_next(rng);
 
 	for (int x = 0; x < SET_ITERATIONS * 10 + 1;) {
+		#if PPT2
+			if (x == 14)
+				for (int i = 0; i < 49; i++)
+					rng_next(rng);
+		#endif
+
 		int bag[7];
 		for (int i = 0; i < 7; i++) bag[i] = i;
 
 		for (int i = 0; i < 7; i++) {
-			rng = rng_next(rng);
-
-			int newIndex = ((((rng) >> 16) * (7 - i)) >> 16) + i;
+			int newIndex = rng_next(rng, 7 - i) + i;
 
 			int newValue = bag[newIndex];
 			int oldValue = bag[i];

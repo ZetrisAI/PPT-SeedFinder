@@ -8,10 +8,11 @@
 #include <vector>
 #include <boost/thread.hpp>
 
-//#define SEARCH_SPECIFIC_SEED 0x977B6F22u
+//#define SEARCH_SPECIFIC_SEED 0u
+#define PPT2 1
 #define REASONABLE_DT_ASSUMPTIONS 0
 
-#define ALLOW_INVALID_SEEDS 1
+#define ALLOW_INVALID_SEEDS 0
 #define USE_MEMORY_MAP 0
 
 #if USE_MEMORY_MAP
@@ -80,9 +81,14 @@ const int FACT[8] = {1, 1, 2, 6, 24, 120, 720, 5040};
 
 #ifdef SEARCH_SPECIFIC_SEED
 	#define RNG_MAX SEARCH_SPECIFIC_SEED
+
 #elif ALLOW_INVALID_SEEDS
 	#define RNG_MAX 0xFFFFFFFFu
-#else
+
+#elif PPT2
+	#define RNG_MAX 0x7FFFFFFFu
+
+#else // PPT1
 	#define RNG_MAX 0xFFFFu
 #endif
 
