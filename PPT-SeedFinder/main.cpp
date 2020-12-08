@@ -195,7 +195,7 @@ void rng_search(uint i) {
 
 		i += THREADS;
 
-	} while ((long long)i - THREADS < (long long)(RNG_MAX - THREADS + 1));
+	} while ((long long)i - THREADS < (long long)RNG_MAX - THREADS + 1);
 }
 
 void rng_check_progress() {
