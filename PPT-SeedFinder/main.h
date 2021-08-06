@@ -5,12 +5,14 @@
 
 #include <algorithm>
 #include <thread>
+#include <unordered_set>
 #include <vector>
 #include <boost/thread.hpp>
 
-//#define SEARCH_SPECIFIC_SEED 0u
+//#define SEARCH_SPECIFIC_SEED 0x005B3A89u
 #define PPT2 1
 #define REASONABLE_DT_ASSUMPTIONS 0
+#define USE_VISITED_HASHING 1
 
 #define ALLOW_INVALID_SEEDS 1
 #define USE_MEMORY_MAP 0
@@ -83,7 +85,7 @@ const int FACT[8] = {1, 1, 2, 6, 24, 120, 720, 5040};
 	#define RNG_MAX SEARCH_SPECIFIC_SEED
 
 #elif ALLOW_INVALID_SEEDS
-	#define RNG_MAX 0xFFFFFFFFu
+	#define RNG_MAX 0x10000000u // we've covered all seeds by 0x03000000u already...
 
 #elif PPT2
 	#define RNG_MAX 0x7FFFFFFFu

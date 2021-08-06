@@ -5,7 +5,12 @@ solution* bin;
 std::vector<rng_solution> solutions;
 boost::mutex solutions_locker;
 
-int max_tetrises = SET_ITERATIONS;
+#if USE_VISITED_HASHING
+	std::unordered_set<ulong> visited = {};
+	boost::mutex visited_locker;
+#endif
+
+int max_tetrises = 9;
 
 const char pieceSymbols[8] = {'E', 'S', 'Z', 'J', 'L', 'T', 'O', 'I'};
 
@@ -67,6 +72,19 @@ int set_encode(int* set, int index, int hold) {
 
 	return result;
 }
+
+#if USE_VISITED_HASHING
+	ulong hash_encode(int* set) {
+		ulong hash = 0;
+
+		for (int i = 0; i < 5; i++) {
+			hash *= 5040;
+			hash += perm_encode(7, set + (i * 7));
+		}
+
+		return hash;
+	}
+#endif
 
 uint rng_progress;
 
@@ -187,15 +205,30 @@ void rng_search(uint i) {
 
 	do {
 		rng_progress = i;
-		
+
 		int set[SET_ITERATIONS * 10 + 1];
 		rng_generate(i, set);
 
+		#if USE_VISITED_HASHING
+			ulong hash = hash_encode(set);
+			//printf("Hash: %016llx = ", hash);
+		
+			visited_locker.lock();
+			if (visited.count(hash)) {
+				//printf("Visited\n");
+				visited_locker.unlock();
+				goto next;
+			}
+
+			//printf("New\n");
+			visited.insert(hash);
+			visited_locker.unlock();
+		#endif
+
 		set_iterate(set, 0, -1, {i});
 
-		i += THREADS;
-
-	} while ((long long)i - THREADS < (long long)RNG_MAX - THREADS + 1);
+	next:;
+	} while ((i += THREADS) - THREADS < RNG_MAX - THREADS + 1);
 }
 
 void rng_check_progress() {
@@ -291,6 +324,10 @@ int main() {
 			}
 		#endif
 
+		#if USE_VISITED_HASHING
+			visited.clear();
+		#endif
+
 		if (solutions.empty()) printf("\n > Nothing found, restarting RNG search with Tetris count %u\n", --max_tetrises);
 	} while (solutions.empty());
 
@@ -301,7 +338,7 @@ int main() {
 	std::vector<rng_solution> optimal_solutions;
 
 	for (int i = 0; i < solutions.size(); i++) {
-		//print_solution(&solutions[i]);
+		print_solution(&solutions[i]);
 		bool add = true;
 
 		for (int j = 0; j < optimal_solutions.size(); j++) {
