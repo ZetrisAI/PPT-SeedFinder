@@ -55,6 +55,12 @@ const ulong BIN_OFFSETS[15] = {
 #define BIN_SIZE BIN_MAX * BIN_ELEMENT
 
 typedef struct {
+	int after;
+	int hash;
+	int kind;
+} twol;
+
+typedef struct {
 	uint rng;
 	int tetrises;
 	int frames;
@@ -62,6 +68,10 @@ typedef struct {
 	int ending[SET_ITERATIONS];
 	int holds[SET_ITERATIONS];
 	int costs[SET_ITERATIONS];
+
+	int twoline_count;
+
+	twol twolines[6];
 } rng_solution;
 
 bool operator <(const rng_solution& x, const rng_solution& y) {

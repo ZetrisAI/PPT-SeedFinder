@@ -5,6 +5,9 @@ solution* bin;
 std::vector<rng_solution> solutions;
 boost::mutex solutions_locker;
 
+int twolinemap[7] = { 4, 5, 3, 2, 0, 6, 1 };
+std::map<int, int> twoline5 = {}, twoline6 = {};
+
 int max_tetrises = SET_ITERATIONS;
 
 const char pieceSymbols[8] = {'E', 'S', 'Z', 'J', 'L', 'T', 'O', 'I'};
@@ -24,7 +27,7 @@ int perm_encode(int n, int* perm) {
 	return encoded;
 }
 
-int set_encode(int* set, int index, int hold) {
+int set_encode(int* set, int index, int hold, int twolines) {
 	int size[4] = {}, encoded[4];
 
 	int i = 0;
@@ -37,7 +40,7 @@ int set_encode(int* set, int index, int hold) {
 		c_max = 10;
 	}
 
-	int s = index * 10 + i;
+	int s = index * 10 + i + (twolines * 5);
 	int c = 0;
 
 	for (; i < 4; i++) {
@@ -78,7 +81,7 @@ void rng_generate(uint rng, int* set) {
 	for (int i = 0; i < 1973; i++) // Global RNG to Piece generation RNG
 		rng = rng_next(rng);
 
-	for (int x = 0; x < SET_ITERATIONS * 10 + 1;) {
+	for (int x = 0; x < SET_ITERATIONS * 11 + 1;) {
 		int bag[7];
 		for (int i = 0; i < 7; i++) bag[i] = i;
 
@@ -93,22 +96,24 @@ void rng_generate(uint rng, int* set) {
 			bag[newIndex] = oldValue;
 		}
 
-		for (int i = 0; i < 7 && x < SET_ITERATIONS * 10 + 1; i++)
+		for (int i = 0; i < 7 && x < SET_ITERATIONS * 11 + 1; i++)
 			set[x++] = bag[i];
 	}
 }
 
 void set_iterate(int* set, int index, int hold, rng_solution candidate) {
-	int pc = index % 7;
-	int s = index * 10;
+	int pc = (index + candidate.twoline_count * 4) % 7;
+	int s = index * 10 + candidate.twoline_count * 5;
 
 	if (hold != -1) {
 		pc += 7;
 		s += 1;
 	}
 
-	ulong offset = (ulong)bin + (BIN_OFFSETS[pc] + (ulong)set_encode(&set[s], index, hold)) * BIN_ELEMENT;
+	bool last_pc = s >= 90;
+	ulong offset = (ulong)bin + (BIN_OFFSETS[pc] + (ulong)set_encode(&set[s], index, hold, candidate.twoline_count)) * BIN_ELEMENT;
 
+	if (s < 93)
 	for (int i = hold != -1; i < 8; i++) {
 		solution result = *((solution*)(offset + i * sizeof(solution)));
 		rng_solution next_candidate = candidate;
@@ -151,15 +156,90 @@ void set_iterate(int* set, int index, int hold, rng_solution candidate) {
 
 		next_candidate.holds[index] = i - 1;
 
-		if (index == SET_ITERATIONS - 1) {
-			if (next_candidate.tetrises >= max_tetrises) {
+		if (last_pc) {
+			if (next_candidate.tetrises + (next_candidate.twoline_count >> 1) >= max_tetrises) {
 				solutions_locker.lock();
 				solutions.push_back(next_candidate);
 				solutions_locker.unlock();
 			}
 
-		} else if (index - next_candidate.tetrises < SET_ITERATIONS - max_tetrises)
+		} else if (index - (next_candidate.tetrises + ((next_candidate.twoline_count + 1) >> 1)) < SET_ITERATIONS - max_tetrises)
 			set_iterate(set, index + 1, i - 1, next_candidate);
+	}
+
+	// twoline
+	if (s != 90 && s != 91)
+	if (hold != -1) {
+		// hash6 HPPPPP
+		int hash = twolinemap[hold];
+		for (int i = 0; i < 5; i++) {
+			hash *= 7;
+			hash += twolinemap[set[s + i]];
+		}
+
+		if (twoline6.count(hash)) {
+			rng_solution next_candidate = candidate;
+
+			next_candidate.twolines[next_candidate.twoline_count++] = { index, hash, 6 };
+
+			if (last_pc) {
+				if (next_candidate.tetrises + (next_candidate.twoline_count >> 1) >= max_tetrises) {
+					solutions_locker.lock();
+					solutions.push_back(next_candidate);
+					solutions_locker.unlock();
+				}
+
+			}
+			else if (index - (next_candidate.tetrises + ((next_candidate.twoline_count + 1) >> 1)) < SET_ITERATIONS - max_tetrises)
+				set_iterate(set, index, ((twoline6[hash] >> 8) & 0xFF), next_candidate);
+		}
+
+	} else {
+		// hold empty and 2 cases: we dont use hold (hash5) or we do use hold (hash6)
+		// hash5 PPPPP
+		int hash = 0;
+		for (int i = 0; i < 5; i++) {
+			hash *= 7;
+			hash += twolinemap[set[s + i]];
+		}
+
+		if (twoline5.count(hash)) {
+			rng_solution next_candidate = candidate;
+
+			next_candidate.twolines[next_candidate.twoline_count++] = { index, hash, 5 };
+
+			if (last_pc) {
+				if (next_candidate.tetrises + (next_candidate.twoline_count >> 1) >= max_tetrises) {
+					solutions_locker.lock();
+					solutions.push_back(next_candidate);
+					solutions_locker.unlock();
+				}
+
+			}
+			else if (index - (next_candidate.tetrises + ((next_candidate.twoline_count + 1) >> 1)) < SET_ITERATIONS - max_tetrises)
+				set_iterate(set, index, -1, next_candidate);
+
+		} else {
+			hash *= 7;
+			hash += twolinemap[set[s + 5]];
+
+			if (twoline6.count(hash)) {
+				rng_solution next_candidate = candidate;
+
+				next_candidate.twolines[next_candidate.twoline_count++] = { index, hash, 6 };
+
+				if (last_pc) {
+					if (next_candidate.twolines) {
+						solutions_locker.lock();
+						solutions.push_back(next_candidate);
+						solutions_locker.unlock();
+					}
+
+				}
+				else if (index - (next_candidate.tetrises + ((next_candidate.twoline_count + 1) >> 1)) < SET_ITERATIONS - max_tetrises)
+					set_iterate(set, index, ((twoline6[hash] >> 8) & 0xFF), next_candidate);
+			}
+		}
 	}
 }
 
@@ -169,7 +249,7 @@ void rng_search(uint i) {
 	do {
 		rng_progress = i;
 		
-		int set[SET_ITERATIONS * 10 + 1];
+		int set[SET_ITERATIONS * 11 + 1];
 		rng_generate(i, set);
 
 		set_iterate(set, 0, -1, {i});
@@ -185,17 +265,25 @@ void rng_check_progress() {
 }
 
 void print_solution(rng_solution* solution) {
-	int set[SET_ITERATIONS * 10 + 1];
+	int set[SET_ITERATIONS * 11 + 1];
 	rng_generate(solution->rng, set);
 
 	printf("  > 0x%08X (tet: %u; cost: %u; path:", solution->rng, solution->tetrises, solution->frames);
 
-	for (int j = 0; j < SET_ITERATIONS; j++)
+	for (int j = 0; j < SET_ITERATIONS; j++) {
 		printf(" %d%c(%d)", solution->ending[j], pieceSymbols[solution->holds[j] + 1], solution->costs[j]);
+		for (int k = 0; k < solution->twoline_count; k++) {
+			if (solution->twolines[k].after == j) {
+				std::map<int, int>* twol = solution->twolines[k].kind == 5 ? &twoline5 : &twoline6;
+				int val = (*twol)[solution->twolines[k].hash];
+				printf(" TWOL%d%d%c(%d)", solution->twolines[k].kind, (val >> 16) & 0xFF, pieceSymbols[solution->twolines[k].kind == 5 ? 0 : (((val >> 8) & 0xFF) + 1)], val & 0xFF);
+			}
+		}
+	}
 
 	printf(") - ");
 
-	for (int j = 0; j < SET_ITERATIONS * 10 + 1; j++)
+	for (int j = 0; j < SET_ITERATIONS * 11 + 1; j++)
 		printf("%c", pieceSymbols[set[j] + 1]);
 
 	printf("\n");
@@ -251,6 +339,29 @@ int main() {
 		fclose(handle);
 	#endif
 
+	printf("  > Loading 2L database...\n");
+
+	handle = fopen("D:\\framedata5.txt", "r");
+	if (handle == NULL) {
+		printf("  > Failed to open 2L database!\n");
+		exit(1);
+	}
+
+	int _fr, _hash, _left, _type;
+	while (fscanf(handle, "%d %d %d %d", &_fr, &_type, &_hash, &_left) > 0) {
+		twoline5[_hash] = _fr | (_left << 8) | (_type << 16);
+	}
+
+	handle = fopen("D:\\framedata6.txt", "r");
+	if (handle == NULL) {
+		printf("  > Failed to open 2L database!\n");
+		exit(1);
+	}
+
+	while (fscanf(handle, "%d %d %d %d", &_fr, &_type, &_hash, &_left) > 0) {
+		twoline6[_hash] = _fr | (_left << 8) | (_type << 16);
+	}
+
 	printf("  > Done\n\n > Starting RNG search with Tetris count %u...\n", max_tetrises);
 
 	std::thread progress(rng_check_progress);
@@ -280,7 +391,7 @@ int main() {
 	std::vector<rng_solution> optimal_solutions;
 
 	for (int i = 0; i < solutions.size(); i++) {
-		//print_solution(&solutions[i]);
+		print_solution(&solutions[i]);
 		bool add = true;
 
 		for (int j = 0; j < optimal_solutions.size(); j++) {
