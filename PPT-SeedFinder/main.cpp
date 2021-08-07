@@ -5,11 +5,6 @@ solution* bin;
 std::vector<rng_solution> solutions;
 boost::mutex solutions_locker;
 
-#if USE_VISITED_HASHING
-	std::unordered_set<ulong> visited = {};
-	boost::mutex visited_locker;
-#endif
-
 int max_tetrises = 9;
 
 const char pieceSymbols[8] = {'E', 'S', 'Z', 'J', 'L', 'T', 'O', 'I'};
@@ -29,7 +24,7 @@ int perm_encode(int n, int* perm) {
 	return encoded;
 }
 
-int set_encode(int* set, int index, int hold) {
+int set_encode(int* set, int index, int hold, int twolines) {
 	int size[4] = {}, encoded[4];
 
 	int i = 0;
@@ -42,7 +37,7 @@ int set_encode(int* set, int index, int hold) {
 		c_max = 10;
 	}
 
-	int s = index * 10 + i;
+	int s = index * 10 + i + (twolines * 5);
 	int c = 0;
 
 	for (; i < 4; i++) {
@@ -74,12 +69,46 @@ int set_encode(int* set, int index, int hold) {
 }
 
 #if USE_VISITED_HASHING
+	std::unordered_set<ulong> visited = {};
+	boost::mutex visited_locker;
+
 	ulong hash_encode(int* set) {
 		ulong hash = 0;
 
 		for (int i = 0; i < 5; i++) {
 			hash *= 5040;
 			hash += perm_encode(7, set + (i * 7));
+		}
+
+		return hash;
+	}
+#endif
+
+#if SEARCH_TWOLINES
+	const int twol_piecemap[7] = {4, 5, 3, 2, 0, 6, 1};
+	std::map<int, int> twol_hash5 = {}, twol_hash6 = {};
+
+	int twol_hash_load(const char* filename, std::map<int, int>* twol_hash) {
+		FILE* handle = fopen(filename, "r");
+		if (handle == NULL) {
+			printf("  > Failed to open 2L database!\n");
+			exit(1);
+		}
+
+		int _fr, _hash, _left, _type;
+		while (fscanf(handle, "%d %d %d %d", &_fr, &_type, &_hash, &_left) > 0) {
+			(*twol_hash)[_hash] = _fr | (_left << 8) | (_type << 16);
+		}
+
+		fclose(handle);
+	}
+
+	int twol_hash_encode(int hold, int* pieces) {
+		int hash = hold == -1 ? 0 : twol_piecemap[hold];
+
+		for (int i = 0; i < 5; i++) {
+			hash *= 7;
+			hash += twol_piecemap[pieces[i]];
 		}
 
 		return hash;
@@ -111,7 +140,7 @@ void rng_generate(ulong rng, int* set) {
 	for (int i = 0; i < 1973; i++) // Global RNG to Piece generation RNG
 		rng_next(rng);
 
-	for (int x = 0; x < SET_ITERATIONS * 10 + 1;) {
+	for (int x = 0; x < SET_SIZE;) {
 		#if PPT2
 			if (x == 14)
 				for (int i = 0; i < 49; i++)
@@ -130,25 +159,65 @@ void rng_generate(ulong rng, int* set) {
 			bag[newIndex] = oldValue;
 		}
 
-		for (int i = 0; i < 7 && x < SET_ITERATIONS * 10 + 1; i++)
+		for (int i = 0; i < 7 && x < SET_SIZE; i++)
 			set[x++] = bag[i];
 	}
 }
 
-void set_iterate(int* set, int index, int hold, rng_solution candidate) {
-	int pc = index % 7;
-	int s = index * 10;
+void set_iterate(int* set, int index, int hold, const rng_solution* candidate);
+
+void set_next(const rng_solution* next_candidate, int* set, int index, int hold_next, bool last_pc, bool is_twoline) {
+	int twolines =
+		#if SEARCH_TWOLINES
+			next_candidate->twolines;
+		#else
+			0;
+		#endif
+
+	if (last_pc) {
+		if (next_candidate->tetrises + (twolines >> 1) >= max_tetrises) {
+			solutions_locker.lock();
+			solutions.push_back(*next_candidate);
+			solutions_locker.unlock();
+		}
+
+	} else if (index - (next_candidate->tetrises + ((twolines + 1) >> 1)) < SET_ITERATIONS - max_tetrises)
+		set_iterate(set, index + !is_twoline, hold_next, next_candidate);
+}
+
+#if SEARCH_TWOLINES
+	void twol_next(const rng_solution* from_candidate, int index, int* set, int hash, int kind, bool last_pc) {
+		rng_solution next_candidate = *from_candidate;
+
+		next_candidate.twol_data[next_candidate.twolines++] = {index, hash, kind};
+
+		set_next(&next_candidate, set, index, kind == 6? (twol_hash6[hash] >> 8) & 0xFF : -1, last_pc, true);
+	}
+#endif
+
+void set_iterate(int* set, int index, int hold, const rng_solution* candidate) {
+	int twolines =
+		#if SEARCH_TWOLINES
+			candidate->twolines;
+		#else
+			0;
+		#endif
+
+	int pc = (index + twolines * 4) % 7;
+	int s = index * 10 + twolines * 5;
 
 	if (hold != -1) {
 		pc += 7;
 		s += 1;
 	}
 
-	ulong offset = (ulong)bin + (BIN_OFFSETS[pc] + (ulong)set_encode(&set[s], index, hold)) * BIN_ELEMENT;
+	bool last_pc = s >= 90;
+	ulong offset = (ulong)bin + (BIN_OFFSETS[pc] + (ulong)set_encode(&set[s], index, hold, twolines)) * BIN_ELEMENT;
 
+	if (s < 93)
 	for (int i = hold != -1; i < 8; i++) {
 		solution result = *((solution*)(offset + i * sizeof(solution)));
-		rng_solution next_candidate = candidate;
+		rng_solution next_candidate = *candidate;
 
 		if (result.solution_exists) {
 			next_candidate.tetrises++;
@@ -186,18 +255,33 @@ void set_iterate(int* set, int index, int hold, rng_solution candidate) {
 			} else continue;
 		#endif
 
-		next_candidate.holds[index] = i - 1;
-
-		if (index == SET_ITERATIONS - 1) {
-			if (next_candidate.tetrises >= max_tetrises) {
-				solutions_locker.lock();
-				solutions.push_back(next_candidate);
-				solutions_locker.unlock();
-			}
-
-		} else if (index - next_candidate.tetrises < SET_ITERATIONS - max_tetrises)
-			set_iterate(set, index + 1, i - 1, next_candidate);
+		set_next(&next_candidate, set, index, next_candidate.holds[index] = i - 1, last_pc, false);
 	}
+
+	#if SEARCH_TWOLINES
+		// twoline
+		if (s == 90 || s == 91) return;
+
+		int hash = twol_hash_encode(hold, set + s);
+
+		if (hold != -1) {
+			// hash6 HPPPPP
+			if (twol_hash6.count(hash))
+				twol_next(candidate, index, set, hash, 6, last_pc);
+
+		// hash5 PPPPP
+		} else if (twol_hash5.count(hash))
+			twol_next(candidate, index, set, hash, 5, last_pc);
+
+		else {
+			// hold empty and we do use hold (convert to hash5 to hash6)
+			hash *= 7;
+			hash += twol_piecemap[set[s + 5]];
+
+			if (twol_hash6.count(hash))
+				twol_next(candidate, index, set, hash, 6, last_pc);
+		}
+    #endif
 }
 
 void rng_search(uint i) {
@@ -206,8 +290,10 @@ void rng_search(uint i) {
 	do {
 		rng_progress = i;
 
-		int set[SET_ITERATIONS * 10 + 1];
+		int set[SET_SIZE];
 		rng_generate(i, set);
+
+		rng_solution candidate = {i};
 
 		#if USE_VISITED_HASHING
 			ulong hash = hash_encode(set);
@@ -225,7 +311,7 @@ void rng_search(uint i) {
 			visited_locker.unlock();
 		#endif
 
-		set_iterate(set, 0, -1, {i});
+		set_iterate(set, 0, -1, &candidate);
 
 	next:;
 	} while ((i += THREADS) - THREADS < RNG_MAX - THREADS + 1);
@@ -239,17 +325,28 @@ void rng_check_progress() {
 }
 
 void print_solution(rng_solution* solution) {
-	int set[SET_ITERATIONS * 10 + 1];
+	int set[SET_SIZE];
 	rng_generate(solution->rng, set);
 
 	printf("  > 0x%08X (tet: %u; cost: %u; path:", solution->rng, solution->tetrises, solution->frames);
 
-	for (int j = 0; j < SET_ITERATIONS; j++)
+	for (int j = 0; j < SET_ITERATIONS; j++) {
 		printf(" %d%c(%d)", solution->ending[j], pieceSymbols[solution->holds[j] + 1], solution->costs[j]);
+
+		#if SEARCH_TWOLINES
+			for (int k = 0; k < solution->twolines; k++) {
+				if (solution->twol_data[k].after == j) {
+					std::map<int, int>* twol = solution->twol_data[k].kind == 5 ? &twol_hash5 : &twol_hash6;
+					int val = (*twol)[solution->twol_data[k].hash];
+					printf(" TWOL%d%d%c(%d)", solution->twol_data[k].kind, (val >> 16) & 0xFF, pieceSymbols[solution->twol_data[k].kind == 5 ? 0 : (((val >> 8) & 0xFF) + 1)], val & 0xFF);
+				}
+			}
+		#endif
+	}
 
 	printf(") - ");
 
-	for (int j = 0; j < SET_ITERATIONS * 10 + 1; j++)
+	for (int j = 0; j < SET_SIZE; j++)
 		printf("%c", pieceSymbols[set[j] + 1]);
 
 	printf("\n");
@@ -303,6 +400,13 @@ int main() {
 
 		(void)fread(bin, BIN_MAX * BIN_ELEMENT, 1, handle);
 		fclose(handle);
+	#endif
+
+	#if SEARCH_TWOLINES
+		printf("  > Loading 2L database...\n");
+
+		twol_hash_load("D:\\framedata5.txt", &twol_hash5);
+		twol_hash_load("D:\\framedata6.txt", &twol_hash6);
 	#endif
 
 	printf("  > Done\n\n > Starting RNG search with Tetris count %u...\n", max_tetrises);

@@ -13,6 +13,7 @@
 #define PPT2 1
 #define REASONABLE_DT_ASSUMPTIONS 0
 #define USE_VISITED_HASHING 1
+#define SEARCH_TWOLINES 1
 
 #define ALLOW_INVALID_SEEDS 1
 #define USE_MEMORY_MAP 0
@@ -21,11 +22,15 @@
 	#include <boost/iostreams/device/mapped_file.hpp>
 #endif
 
+#define THREADS 12
+#define MOV_FILENAME "D:\\all_mov.bin"
+
 typedef unsigned char uchar;
 typedef unsigned int uint;
 typedef unsigned long long ulong;
 
 #define SET_ITERATIONS 10
+#define SET_SIZE (SET_ITERATIONS * 11 + 1)
 
 typedef struct {
 	uchar frames : 7;
@@ -58,6 +63,12 @@ const ulong BIN_OFFSETS[15] = {
 #define BIN_SIZE BIN_MAX * BIN_ELEMENT
 
 typedef struct {
+	int after;
+	int hash;
+	int kind;
+} twol;
+
+typedef struct {
 	uint rng;
 	int tetrises;
 	int frames;
@@ -65,6 +76,11 @@ typedef struct {
 	int ending[SET_ITERATIONS];
 	int holds[SET_ITERATIONS];
 	int costs[SET_ITERATIONS];
+
+	#if SEARCH_TWOLINES
+		int twolines;
+		twol twol_data[6];
+	#endif
 } rng_solution;
 
 bool operator <(const rng_solution& x, const rng_solution& y) {
@@ -76,10 +92,6 @@ bool operator <(const rng_solution& x, const rng_solution& y) {
 }
 
 const int FACT[8] = {1, 1, 2, 6, 24, 120, 720, 5040};
-
-#define THREADS 12
-
-#define MOV_FILENAME "D:\\all_mov.bin"
 
 #ifdef SEARCH_SPECIFIC_SEED
 	#define RNG_MAX SEARCH_SPECIFIC_SEED
