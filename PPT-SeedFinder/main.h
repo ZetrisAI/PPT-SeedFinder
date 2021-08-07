@@ -10,6 +10,7 @@
 
 //#define SEARCH_SPECIFIC_SEED 0x977B6F22u
 #define REASONABLE_DT_ASSUMPTIONS 0
+#define SEARCH_TWOLINES 1
 
 #define ALLOW_INVALID_SEEDS 1
 #define USE_MEMORY_MAP 0
@@ -69,9 +70,10 @@ typedef struct {
 	int holds[SET_ITERATIONS];
 	int costs[SET_ITERATIONS];
 
-	int twoline_count;
-
-	twol twolines[6];
+	#if SEARCH_TWOLINES
+		int twolines;
+		twol twol_data[6];
+	#endif
 } rng_solution;
 
 bool operator <(const rng_solution& x, const rng_solution& y) {
