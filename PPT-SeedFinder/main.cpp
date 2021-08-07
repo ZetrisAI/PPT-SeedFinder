@@ -5,7 +5,7 @@ solution* bin;
 std::vector<rng_solution> solutions;
 boost::mutex solutions_locker;
 
-int max_tetrises = 9;
+int max_tetrises = 10;
 
 const char pieceSymbols[8] = {'E', 'S', 'Z', 'J', 'L', 'T', 'O', 'I'};
 
